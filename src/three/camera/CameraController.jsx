@@ -109,20 +109,33 @@ export function CameraController() {
       }
     }
 
-    // Animate camera position smoothly
-    activeTweenRef.current = gsap.to(camera.position, {
+    // Animate camera position and orbit target smoothly in tandem
+    const targetObj = {
+      x: camera.position.x,
+      y: camera.position.y,
+      z: camera.position.z,
+      tx: controls ? controls.target.x : lookTarget[0],
+      ty: controls ? controls.target.y : lookTarget[1],
+      tz: controls ? controls.target.z : lookTarget[2]
+    };
+
+    activeTweenRef.current = gsap.to(targetObj, {
       x: targetCamPos[0],
       y: targetCamPos[1],
       z: targetCamPos[2],
-      duration: 0.75,
-      ease: 'power2.out',
+      tx: lookTarget[0],
+      ty: lookTarget[1],
+      tz: lookTarget[2],
+      duration: 0.85,
+      ease: 'power3.out',
       overwrite: 'auto',
       onUpdate: () => {
+        camera.position.set(targetObj.x, targetObj.y, targetObj.z);
         if (controls) {
-          controls.target.set(lookTarget[0], lookTarget[1], lookTarget[2]);
+          controls.target.set(targetObj.tx, targetObj.ty, targetObj.tz);
           controls.update();
         } else {
-          camera.lookAt(lookTarget[0], lookTarget[1], lookTarget[2]);
+          camera.lookAt(targetObj.tx, targetObj.ty, targetObj.tz);
         }
       }
     });

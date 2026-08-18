@@ -1,6 +1,50 @@
-import React from 'react';
+import React, { useRef } from 'react';
+import { useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
+import * as THREE from 'three';
 import { useVisualizerStore } from '../../store/useVisualizerStore.js';
+
+function SmoothHashChainNode({ nodeY, val }) {
+  const groupRef = useRef();
+
+  useFrame((state, delta) => {
+    if (groupRef.current) {
+      groupRef.current.position.y = THREE.MathUtils.damp(groupRef.current.position.y, nodeY, 16, delta);
+    }
+  });
+
+  return (
+    <group ref={groupRef} position={[0, nodeY, 0]}>
+      {/* Vertical chain link */}
+      <mesh position={[0, -0.55, 0]}>
+        <cylinderGeometry args={[0.03, 0.03, 0.8, 8]} />
+        <meshStandardMaterial color="#64748b" />
+      </mesh>
+
+      {/* Chain Node */}
+      <mesh castShadow receiveShadow>
+        <boxGeometry args={[1.2, 0.8, 1.0]} />
+        <meshStandardMaterial
+          color="#1e293b"
+          emissive="#10b981"
+          emissiveIntensity={0.3}
+          roughness={0.2}
+        />
+      </mesh>
+
+      <Html center distanceFactor={15} style={{ pointerEvents: 'none' }}>
+        <span style={{
+          fontFamily: 'var(--font-mono)',
+          fontSize: '11px',
+          fontWeight: 700,
+          color: '#ffffff'
+        }}>
+          {val}
+        </span>
+      </Html>
+    </group>
+  );
+}
 
 export function HashTableVisualizer() {
   const data = useVisualizerStore((s) => s.data);
@@ -72,40 +116,13 @@ export function HashTableVisualizer() {
             </Html>
 
             {/* Chained Linked Nodes in this bucket */}
-            {chain.map((val, chainIdx) => {
-              const nodeY = (chainIdx + 1) * 1.1;
-              return (
-                <group key={`chain-${bucketIdx}-${chainIdx}`} position={[0, nodeY, 0]}>
-                  {/* Vertical chain link */}
-                  <mesh position={[0, -0.55, 0]}>
-                    <cylinderGeometry args={[0.03, 0.03, 0.8, 8]} />
-                    <meshStandardMaterial color="#64748b" />
-                  </mesh>
-
-                  {/* Chain Node */}
-                  <mesh castShadow receiveShadow>
-                    <boxGeometry args={[1.2, 0.8, 1.0]} />
-                    <meshStandardMaterial
-                      color="#1e293b"
-                      emissive="#10b981"
-                      emissiveIntensity={0.3}
-                      roughness={0.2}
-                    />
-                  </mesh>
-
-                  <Html center distanceFactor={15} style={{ pointerEvents: 'none' }}>
-                    <span style={{
-                      fontFamily: 'var(--font-mono)',
-                      fontSize: '11px',
-                      fontWeight: 700,
-                      color: '#ffffff'
-                    }}>
-                      {val}
-                    </span>
-                  </Html>
-                </group>
-              );
-            })}
+            {chain.map((val, chainIdx) => (
+              <SmoothHashChainNode
+                key={`chain-${bucketIdx}-${chainIdx}`}
+                nodeY={(chainIdx + 1) * 1.1}
+                val={val}
+              />
+            ))}
           </group>
         );
       })}

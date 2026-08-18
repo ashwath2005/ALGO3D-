@@ -1,6 +1,76 @@
-import React from 'react';
+import React, { useRef } from 'react';
+import { useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
+import * as THREE from 'three';
 import { useVisualizerStore } from '../../store/useVisualizerStore.js';
+
+function SmoothPartitionBlock({
+  targetX,
+  targetY,
+  val,
+  blockColor,
+  emissive,
+  emissiveIntensity,
+  isLow,
+  isMid,
+  isHigh
+}) {
+  const groupRef = useRef();
+
+  useFrame((state, delta) => {
+    if (groupRef.current) {
+      groupRef.current.position.x = THREE.MathUtils.damp(groupRef.current.position.x, targetX, 16, delta);
+      groupRef.current.position.y = THREE.MathUtils.damp(groupRef.current.position.y, targetY, 16, delta);
+    }
+  });
+
+  return (
+    <group ref={groupRef} position={[targetX, targetY, 0]}>
+      <mesh castShadow receiveShadow>
+        <boxGeometry args={[1.1, 1.1, 1.1]} />
+        <meshStandardMaterial
+          color={blockColor}
+          emissive={emissive}
+          emissiveIntensity={emissiveIntensity}
+          roughness={0.2}
+          metalness={0.4}
+        />
+      </mesh>
+
+      {/* Pointers (LOW, MID, HIGH) */}
+      {isLow && (
+        <Html position={[0, 1.3, 0]} center distanceFactor={14} style={{ pointerEvents: 'none' }}>
+          <span style={{ fontSize: '9px', fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#f43f5e', background: '#000', padding: '1px 4px', borderRadius: '3px', border: '1px solid #f43f5e' }}>
+            LOW
+          </span>
+        </Html>
+      )}
+
+      {isMid && (
+        <Html position={[0, 1.7, 0]} center distanceFactor={14} style={{ pointerEvents: 'none' }}>
+          <span style={{ fontSize: '9px', fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#ffffff', background: '#000', padding: '1px 4px', borderRadius: '3px', border: '1px solid #ffffff' }}>
+            MID
+          </span>
+        </Html>
+      )}
+
+      {isHigh && (
+        <Html position={[0, 1.3, 0]} center distanceFactor={14} style={{ pointerEvents: 'none' }}>
+          <span style={{ fontSize: '9px', fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#38bdf8', background: '#000', padding: '1px 4px', borderRadius: '3px', border: '1px solid #38bdf8' }}>
+            HIGH
+          </span>
+        </Html>
+      )}
+
+      {/* Value Label */}
+      <Html center distanceFactor={14} style={{ pointerEvents: 'none' }}>
+        <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '14px', color: val === 1 ? '#000000' : '#ffffff' }}>
+          {val}
+        </div>
+      </Html>
+    </group>
+  );
+}
 
 export function PartitionVisualizer() {
   const data = useVisualizerStore((s) => s.data);
@@ -73,50 +143,18 @@ export function PartitionVisualizer() {
         const posX = (idx - (arr.length - 1) / 2) * 1.35;
 
         return (
-          <group key={`dnf-block-${idx}`} position={[posX, 0.6, 0]}>
-            <mesh castShadow receiveShadow>
-              <boxGeometry args={[1.1, 1.1, 1.1]} />
-              <meshStandardMaterial
-                color={blockColor}
-                emissive={emissive}
-                emissiveIntensity={emissiveIntensity}
-                roughness={0.2}
-                metalness={0.4}
-              />
-            </mesh>
-
-            {/* Pointers (LOW, MID, HIGH) */}
-            {isLow && (
-              <Html position={[0, 1.3, 0]} center distanceFactor={14} style={{ pointerEvents: 'none' }}>
-                <span style={{ fontSize: '9px', fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#f43f5e', background: '#000', padding: '1px 4px', borderRadius: '3px', border: '1px solid #f43f5e' }}>
-                  LOW
-                </span>
-              </Html>
-            )}
-
-            {isMid && (
-              <Html position={[0, 1.7, 0]} center distanceFactor={14} style={{ pointerEvents: 'none' }}>
-                <span style={{ fontSize: '9px', fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#ffffff', background: '#000', padding: '1px 4px', borderRadius: '3px', border: '1px solid #ffffff' }}>
-                  MID
-                </span>
-              </Html>
-            )}
-
-            {isHigh && (
-              <Html position={[0, 1.3, 0]} center distanceFactor={14} style={{ pointerEvents: 'none' }}>
-                <span style={{ fontSize: '9px', fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#38bdf8', background: '#000', padding: '1px 4px', borderRadius: '3px', border: '1px solid #38bdf8' }}>
-                  HIGH
-                </span>
-              </Html>
-            )}
-
-            {/* Value Label */}
-            <Html center distanceFactor={14} style={{ pointerEvents: 'none' }}>
-              <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '14px', color: val === 1 ? '#000000' : '#ffffff' }}>
-                {val}
-              </div>
-            </Html>
-          </group>
+          <SmoothPartitionBlock
+            key={`dnf-block-${idx}`}
+            targetX={posX}
+            targetY={0.6}
+            val={val}
+            blockColor={blockColor}
+            emissive={emissive}
+            emissiveIntensity={emissiveIntensity}
+            isLow={isLow}
+            isMid={isMid}
+            isHigh={isHigh}
+          />
         );
       })}
     </group>

@@ -1,6 +1,7 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef } from 'react';
+import { useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
-import gsap from 'gsap';
+import * as THREE from 'three';
 import { useVisualizerStore } from '../../store/useVisualizerStore.js';
 
 function LinkedNode({ val, index, total, isVisited, isHighlighted }) {
@@ -21,16 +22,12 @@ function LinkedNode({ val, index, total, isVisited, isHighlighted }) {
     emissiveIntensity = 0.5;
   }
 
-  useEffect(() => {
+  useFrame((state, delta) => {
     if (groupRef.current) {
-      gsap.to(groupRef.current.position, {
-        x: targetX,
-        y: 1.2,
-        duration: 0.4,
-        ease: 'power2.out'
-      });
+      groupRef.current.position.x = THREE.MathUtils.damp(groupRef.current.position.x, targetX, 16, delta);
+      groupRef.current.position.y = THREE.MathUtils.damp(groupRef.current.position.y, 1.2, 16, delta);
     }
-  }, [targetX]);
+  });
 
   return (
     <group ref={groupRef} position={[targetX, 1.2, 0]}>

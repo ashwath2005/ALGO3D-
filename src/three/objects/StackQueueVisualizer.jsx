@@ -1,7 +1,56 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef } from 'react';
+import { useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
-import gsap from 'gsap';
+import * as THREE from 'three';
 import { useVisualizerStore } from '../../store/useVisualizerStore.js';
+
+function SmoothStackItem({ posY, val, isTop, color, emissive, emissiveIntensity }) {
+  const groupRef = useRef();
+
+  useFrame((state, delta) => {
+    if (groupRef.current) {
+      groupRef.current.position.y = THREE.MathUtils.damp(groupRef.current.position.y, posY, 16, delta);
+    }
+  });
+
+  return (
+    <group ref={groupRef} position={[0, posY, 0]}>
+      <mesh castShadow receiveShadow>
+        <boxGeometry args={[2, 0.8, 1.6]} />
+        <meshStandardMaterial
+          color={color}
+          emissive={emissive}
+          emissiveIntensity={emissiveIntensity}
+          roughness={0.2}
+          metalness={0.5}
+        />
+      </mesh>
+
+      <Html center distanceFactor={15} style={{ pointerEvents: 'none' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: '13px',
+            fontWeight: 700,
+            color: '#ffffff'
+          }}>
+            {val}
+          </span>
+          {isTop && (
+            <span style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: '9px',
+              color: 'var(--accent-cyan)',
+              background: 'rgba(56, 189, 248, 0.2)',
+              padding: '1px 5px',
+              borderRadius: '3px'
+            }}>TOP</span>
+          )}
+        </div>
+      </Html>
+    </group>
+  );
+}
 
 // --- STACK VISUALIZER ---
 export function StackVisualizer() {
@@ -58,43 +107,53 @@ export function StackVisualizer() {
         const posY = -0.2 + idx * 0.95;
 
         return (
-          <group key={`stack-item-${idx}-${val}`} position={[0, posY, 0]}>
-            <mesh castShadow receiveShadow>
-              <boxGeometry args={[2, 0.8, 1.6]} />
-              <meshStandardMaterial
-                color={color}
-                emissive={emissive}
-                emissiveIntensity={emissiveIntensity}
-                roughness={0.2}
-                metalness={0.5}
-              />
-            </mesh>
-
-            <Html center distanceFactor={15} style={{ pointerEvents: 'none' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: '13px',
-                  fontWeight: 700,
-                  color: '#ffffff'
-                }}>
-                  {val}
-                </span>
-                {isTop && (
-                  <span style={{
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: '9px',
-                    color: 'var(--accent-cyan)',
-                    background: 'rgba(56, 189, 248, 0.2)',
-                    padding: '1px 5px',
-                    borderRadius: '3px'
-                  }}>TOP</span>
-                )}
-              </div>
-            </Html>
-          </group>
+          <SmoothStackItem
+            key={`stack-item-${idx}-${val}`}
+            posY={posY}
+            val={val}
+            isTop={isTop}
+            color={color}
+            emissive={emissive}
+            emissiveIntensity={emissiveIntensity}
+          />
         );
       })}
+    </group>
+  );
+}
+
+function SmoothQueueItem({ targetX, val, color, emissive, emissiveIntensity }) {
+  const groupRef = useRef();
+
+  useFrame((state, delta) => {
+    if (groupRef.current) {
+      groupRef.current.position.x = THREE.MathUtils.damp(groupRef.current.position.x, targetX, 16, delta);
+    }
+  });
+
+  return (
+    <group ref={groupRef} position={[targetX, 0.8, 0]}>
+      <mesh castShadow receiveShadow>
+        <boxGeometry args={[1.3, 1.2, 1.2]} />
+        <meshStandardMaterial
+          color={color}
+          emissive={emissive}
+          emissiveIntensity={emissiveIntensity}
+          roughness={0.2}
+          metalness={0.4}
+        />
+      </mesh>
+
+      <Html center distanceFactor={15} style={{ pointerEvents: 'none' }}>
+        <span style={{
+          fontFamily: 'var(--font-mono)',
+          fontSize: '12px',
+          fontWeight: 700,
+          color: '#ffffff'
+        }}>
+          {val}
+        </span>
+      </Html>
     </group>
   );
 }
@@ -148,8 +207,6 @@ export function QueueVisualizer() {
       )}
 
       {queue.map((val, idx) => {
-        const isFront = idx === 0;
-        const isRear = idx === queue.length - 1;
         const isVisited = activeState.visitedIndices.includes(idx);
         const isHighlighted = activeState.highlightedIndices.includes(idx);
 
@@ -170,29 +227,14 @@ export function QueueVisualizer() {
         }
 
         return (
-          <group key={`q-item-${idx}-${val}`} position={[targetX, 0.8, 0]}>
-            <mesh castShadow receiveShadow>
-              <boxGeometry args={[1.3, 1.2, 1.2]} />
-              <meshStandardMaterial
-                color={color}
-                emissive={emissive}
-                emissiveIntensity={emissiveIntensity}
-                roughness={0.2}
-                metalness={0.4}
-              />
-            </mesh>
-
-            <Html center distanceFactor={15} style={{ pointerEvents: 'none' }}>
-              <span style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: '12px',
-                fontWeight: 700,
-                color: '#ffffff'
-              }}>
-                {val}
-              </span>
-            </Html>
-          </group>
+          <SmoothQueueItem
+            key={`q-item-${idx}-${val}`}
+            targetX={targetX}
+            val={val}
+            color={color}
+            emissive={emissive}
+            emissiveIntensity={emissiveIntensity}
+          />
         );
       })}
     </group>

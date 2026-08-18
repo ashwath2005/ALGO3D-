@@ -1,9 +1,9 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef } from 'react';
+import { useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
-import gsap from 'gsap';
+import * as THREE from 'three';
 import { useVisualizerStore } from '../../store/useVisualizerStore.js';
 import { resolveVisualState, getVisualStateTheme, VISUAL_STATES } from '../../algorithms/engine/ExecutionEngine.js';
-import { animationController } from '../../animations/AnimationController.js';
 
 function ArrayBar({ index, value, total, currentStep, isBinarySearch }) {
   const meshRef = useRef();
@@ -19,19 +19,13 @@ function ArrayBar({ index, value, total, currentStep, isBinarySearch }) {
   const visualState = resolveVisualState(currentStep, 'index', index);
   const theme = getVisualStateTheme(visualState);
 
-  // Version-safe GSAP position translation
-  useEffect(() => {
+  // High performance framerate-independent damped smooth gliding
+  useFrame((state, delta) => {
     if (meshRef.current) {
-      const version = animationController.getVersion();
-      gsap.to(meshRef.current.position, {
-        x: targetX,
-        y: posY,
-        duration: 0.38,
-        ease: 'power2.out',
-        overwrite: 'auto'
-      });
+      meshRef.current.position.x = THREE.MathUtils.damp(meshRef.current.position.x, targetX, 16, delta);
+      meshRef.current.position.y = THREE.MathUtils.damp(meshRef.current.position.y, posY, 16, delta);
     }
-  }, [targetX, posY]);
+  });
 
   return (
     <group>

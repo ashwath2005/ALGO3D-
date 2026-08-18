@@ -1,6 +1,72 @@
-import React from 'react';
+import React, { useRef } from 'react';
+import { useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
+import * as THREE from 'three';
 import { useVisualizerStore } from '../../store/useVisualizerStore.js';
+
+function SmoothSequenceNode({
+  targetX,
+  targetY,
+  val,
+  idx,
+  isInWindow,
+  nodeColor,
+  emissive,
+  emissiveIntensity,
+  hasNext,
+  isNextInWindow
+}) {
+  const groupRef = useRef();
+
+  useFrame((state, delta) => {
+    if (groupRef.current) {
+      groupRef.current.position.x = THREE.MathUtils.damp(groupRef.current.position.x, targetX, 16, delta);
+      groupRef.current.position.y = THREE.MathUtils.damp(groupRef.current.position.y, targetY, 16, delta);
+    }
+  });
+
+  return (
+    <group ref={groupRef} position={[targetX, targetY, 0]}>
+      {/* Connecting Pipe to Next Node */}
+      {hasNext && (
+        <mesh position={[0.7, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+          <cylinderGeometry args={[0.06, 0.06, 1.4, 8]} />
+          <meshStandardMaterial
+            color={isInWindow && isNextInWindow ? '#10b981' : '#334155'}
+            emissive={isInWindow && isNextInWindow ? '#10b981' : '#000000'}
+            emissiveIntensity={isInWindow && isNextInWindow ? 0.6 : 0}
+          />
+        </mesh>
+      )}
+
+      <mesh castShadow receiveShadow>
+        <sphereGeometry args={[0.5, 24, 24]} />
+        <meshStandardMaterial
+          color={nodeColor}
+          emissive={emissive}
+          emissiveIntensity={emissiveIntensity}
+          roughness={0.2}
+        />
+      </mesh>
+
+      <Html center distanceFactor={14} style={{ pointerEvents: 'none' }}>
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          fontFamily: 'var(--font-mono)'
+        }}>
+          <span style={{ fontSize: '12px', fontWeight: 700, color: '#ffffff' }}>
+            {val}
+          </span>
+          <span style={{ fontSize: '8px', color: 'var(--text-muted)' }}>
+            [{idx}]
+          </span>
+        </div>
+      </Html>
+    </group>
+  );
+}
 
 export function SequencePathVisualizer() {
   const data = useVisualizerStore((s) => s.data);
@@ -60,45 +126,19 @@ export function SequencePathVisualizer() {
         let emissiveIntensity = isInWindow ? 0.7 : val < 0 ? 0.3 : 0;
 
         return (
-          <group key={`kadane-node-${idx}`} position={[posX, 0.6, 0]}>
-            {/* Connecting Pipe to Next Node */}
-            {idx < arr.length - 1 && (
-              <mesh position={[0.7, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
-                <cylinderGeometry args={[0.06, 0.06, 1.4, 8]} />
-                <meshStandardMaterial
-                  color={isInWindow && activeIndices.includes(idx + 1) ? '#10b981' : '#334155'}
-                  emissive={isInWindow && activeIndices.includes(idx + 1) ? '#10b981' : '#000000'}
-                  emissiveIntensity={isInWindow && activeIndices.includes(idx + 1) ? 0.6 : 0}
-                />
-              </mesh>
-            )}
-
-            <mesh castShadow receiveShadow>
-              <sphereGeometry args={[0.5, 24, 24]} />
-              <meshStandardMaterial
-                color={nodeColor}
-                emissive={emissive}
-                emissiveIntensity={emissiveIntensity}
-                roughness={0.2}
-              />
-            </mesh>
-
-            <Html center distanceFactor={14} style={{ pointerEvents: 'none' }}>
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                fontFamily: 'var(--font-mono)'
-              }}>
-                <span style={{ fontSize: '12px', fontWeight: 700, color: '#ffffff' }}>
-                  {val}
-                </span>
-                <span style={{ fontSize: '8px', color: 'var(--text-muted)' }}>
-                  [{idx}]
-                </span>
-              </div>
-            </Html>
-          </group>
+          <SmoothSequenceNode
+            key={`kadane-node-${idx}`}
+            targetX={posX}
+            targetY={0.6}
+            val={val}
+            idx={idx}
+            isInWindow={isInWindow}
+            nodeColor={nodeColor}
+            emissive={emissive}
+            emissiveIntensity={emissiveIntensity}
+            hasNext={idx < arr.length - 1}
+            isNextInWindow={activeIndices.includes(idx + 1)}
+          />
         );
       })}
     </group>

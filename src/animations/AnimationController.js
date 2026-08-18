@@ -59,7 +59,7 @@ class AnimationController {
   /**
    * Animate physical position movement
    */
-  animateMove({ target, to, duration = 0.4, easing = 'power2.out', version = null, onComplete }) {
+  animateMove({ target, to, duration = 0.42, easing = 'power3.out', version = null, onComplete }) {
     if (version !== null && version !== this.version) return null;
     if (!target) return null;
 
@@ -69,6 +69,7 @@ class AnimationController {
       z: to.z !== undefined ? to.z : target.z,
       duration,
       ease: easing,
+      overwrite: 'auto',
       onComplete: () => {
         if (version !== null && version !== this.version) return;
         if (typeof onComplete === 'function') onComplete();
@@ -79,9 +80,9 @@ class AnimationController {
   }
 
   /**
-   * Animate swap between two 3D positions with subtle arc
+   * Animate swap between two 3D positions with silky parabolic lift arc
    */
-  animateSwap({ objectA, objectB, posA, posB, duration = 0.45, easing = 'power2.inOut', version = null, onComplete }) {
+  animateSwap({ objectA, objectB, posA, posB, duration = 0.48, easing = 'power3.inOut', arcHeight = 0.5, version = null, onComplete }) {
     if (version !== null && version !== this.version) return null;
 
     const tl = gsap.timeline({
@@ -92,23 +93,43 @@ class AnimationController {
     });
 
     if (objectA && posB) {
+      const origYA = objectA.position.y;
       tl.to(objectA.position, {
         x: posB.x,
-        y: posB.y !== undefined ? posB.y : objectA.position.y,
         z: posB.z !== undefined ? posB.z : objectA.position.z,
         duration,
         ease: easing
       }, 0);
+      tl.to(objectA.position, {
+        y: origYA + arcHeight,
+        duration: duration / 2,
+        ease: 'power2.out'
+      }, 0);
+      tl.to(objectA.position, {
+        y: posB.y !== undefined ? posB.y : origYA,
+        duration: duration / 2,
+        ease: 'power2.in'
+      }, duration / 2);
     }
 
     if (objectB && posA) {
+      const origYB = objectB.position.y;
       tl.to(objectB.position, {
         x: posA.x,
-        y: posA.y !== undefined ? posA.y : objectB.position.y,
         z: posA.z !== undefined ? posA.z : objectB.position.z,
         duration,
         ease: easing
       }, 0);
+      tl.to(objectB.position, {
+        y: origYB - arcHeight * 0.4,
+        duration: duration / 2,
+        ease: 'power2.out'
+      }, 0);
+      tl.to(objectB.position, {
+        y: posA.y !== undefined ? posA.y : origYB,
+        duration: duration / 2,
+        ease: 'power2.in'
+      }, duration / 2);
     }
 
     return this.track(tl);
@@ -117,7 +138,7 @@ class AnimationController {
   /**
    * Animate pulse / scale punch
    */
-  animatePulse({ target, scale = 1.15, duration = 0.3, version = null }) {
+  animatePulse({ target, scale = 1.12, duration = 0.35, version = null }) {
     if (version !== null && version !== this.version) return null;
     if (!target) return null;
 
@@ -128,25 +149,25 @@ class AnimationController {
       x: initialScale.x * scale,
       y: initialScale.y * scale,
       z: initialScale.z * scale,
-      duration: duration / 2,
-      ease: 'power2.out'
+      duration: duration * 0.45,
+      ease: 'power3.out'
     });
 
     tl.to(target.scale, {
       x: initialScale.x,
       y: initialScale.y,
       z: initialScale.z,
-      duration: duration / 2,
-      ease: 'power2.in'
+      duration: duration * 0.55,
+      ease: 'power3.inOut'
     });
 
     return this.track(tl);
   }
 
   /**
-   * Animate complete celebration flash
+   * Animate complete celebration wave
    */
-  animateComplete({ targets, duration = 0.6, version = null }) {
+  animateComplete({ targets, duration = 0.7, version = null }) {
     if (version !== null && version !== this.version) return null;
     if (!Array.isArray(targets) || targets.length === 0) return null;
 
@@ -154,12 +175,12 @@ class AnimationController {
     targets.forEach((target, i) => {
       if (!target) return;
       tl.to(target.position, {
-        y: '+=0.4',
-        duration: 0.2,
+        y: '+=0.45',
+        duration: 0.24,
         yoyo: true,
         repeat: 1,
-        ease: 'power1.inOut'
-      }, i * 0.04);
+        ease: 'sine.inOut'
+      }, i * 0.035);
     });
 
     return this.track(tl);

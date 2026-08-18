@@ -52,10 +52,11 @@
   --font-sans: 'Geist', -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'Geist Mono', 'JetBrains Mono', 'IBM Plex Mono', monospace;
 
-  /* Transitions */
-  --transition-fast: 0.15s cubic-bezier(0.16, 1, 0.3, 1);
-  --transition-normal: 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  --transition-smooth: 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  /* Transitions - Butter-smooth cubic-bezier */
+  --transition-fast: 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-normal: 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-smooth: 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-spring: 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 *, *::before, *::after {
@@ -130,6 +131,8 @@ button {
   font-family: inherit;
   cursor: pointer;
   outline: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 button:focus-visible {
@@ -147,12 +150,18 @@ button:focus-visible {
   border: 1px solid var(--border-subtle);
   color: var(--text-secondary);
   transition: all var(--transition-fast);
+  will-change: transform, background, color;
 }
 
 .btn-icon:hover {
   background: var(--bg-surface-elevated);
   color: var(--text-primary);
   border-color: var(--border-medium);
+  transform: translateY(-1px);
+}
+
+.btn-icon:active {
+  transform: translateY(0px) scale(0.96);
 }
 
 .btn-icon.active {
@@ -164,6 +173,7 @@ button:focus-visible {
 .btn-icon:disabled {
   opacity: 0.35;
   cursor: not-allowed;
+  transform: none !important;
 }
 
 .btn-primary {
@@ -178,11 +188,16 @@ button:focus-visible {
   color: #000000;
   border: 1px solid rgba(255, 255, 255, 0.2);
   transition: all var(--transition-fast);
+  will-change: transform, background;
 }
 
 .btn-primary:hover {
   background: #e5e5e5;
   transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  transform: translateY(0px) scale(0.98);
 }
 
 .btn-secondary {
@@ -197,11 +212,17 @@ button:focus-visible {
   color: var(--text-primary);
   border: 1px solid var(--border-subtle);
   transition: all var(--transition-fast);
+  will-change: transform, background;
 }
 
 .btn-secondary:hover {
   background: var(--bg-surface-elevated);
   border-color: var(--border-medium);
+  transform: translateY(-1px);
+}
+
+.btn-secondary:active {
+  transform: translateY(0px) scale(0.98);
 }
 
 /* Glass panel */
@@ -244,4 +265,70 @@ button:focus-visible {
   color: var(--accent-amber);
   background: rgba(245, 158, 11, 0.12);
   border-color: rgba(245, 158, 11, 0.2);
+}
+
+/* Custom Smooth Timeline Scrubber */
+input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+input[type='range']:focus {
+  outline: none;
+}
+
+input[type='range']::-webkit-slider-runnable-track {
+  height: 5px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  transition: background var(--transition-fast);
+}
+
+input[type='range']:hover::-webkit-slider-runnable-track {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  margin-top: -4.5px;
+  background-color: var(--accent-cyan);
+  height: 14px;
+  width: 14px;
+  border-radius: 50%;
+  border: 2px solid #000000;
+  box-shadow: 0 0 8px var(--accent-cyan-glow);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  cursor: grab;
+}
+
+input[type='range']:hover::-webkit-slider-thumb {
+  transform: scale(1.25);
+  box-shadow: 0 0 14px var(--accent-cyan);
+}
+
+input[type='range']:active::-webkit-slider-thumb {
+  cursor: grabbing;
+  transform: scale(1.1);
+  box-shadow: 0 0 18px var(--accent-cyan);
+}
+
+input[type='range']::-moz-range-track {
+  height: 5px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  transition: background var(--transition-fast);
+}
+
+input[type='range']::-moz-range-thumb {
+  background-color: var(--accent-cyan);
+  height: 14px;
+  width: 14px;
+  border-radius: 50%;
+  border: 2px solid #000000;
+  box-shadow: 0 0 8px var(--accent-cyan-glow);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  cursor: grab;
 }

@@ -129,7 +129,10 @@ export function SceneContainer() {
         <CameraController />
         <OrbitControls
           enableDamping
-          dampingFactor={0.05}
+          dampingFactor={0.06}
+          rotateSpeed={0.75}
+          zoomSpeed={0.8}
+          panSpeed={0.75}
           maxDistance={45}
           minDistance={4}
           maxPolarAngle={Math.PI / 2 + 0.1}

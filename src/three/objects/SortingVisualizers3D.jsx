@@ -1,6 +1,101 @@
-import React from 'react';
+import React, { useRef } from 'react';
+import { useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
+import * as THREE from 'three';
 import { useVisualizerStore } from '../../store/useVisualizerStore.js';
+
+/**
+ * Universal High-Performance Damped 3D Sort Bar
+ * Glides smoothly across the array when swapped or shifted.
+ */
+function AnimatedSortBar({
+  targetX,
+  targetY,
+  targetZ = 0,
+  width = 1.0,
+  height,
+  depth = 1.0,
+  color,
+  emissive,
+  emissiveIntensity = 0,
+  roughness = 0.2,
+  metalness = 0.35,
+  val,
+  badgeText = null,
+  badgeColor = null,
+  isLifted = false
+}) {
+  const groupRef = useRef();
+
+  useFrame((state, delta) => {
+    if (groupRef.current) {
+      const liftOffset = isLifted ? 0.35 : 0;
+      groupRef.current.position.x = THREE.MathUtils.damp(groupRef.current.position.x, targetX, 16, delta);
+      groupRef.current.position.y = THREE.MathUtils.damp(groupRef.current.position.y, targetY + liftOffset, 16, delta);
+      groupRef.current.position.z = THREE.MathUtils.damp(groupRef.current.position.z, targetZ, 16, delta);
+    }
+  });
+
+  return (
+    <group ref={groupRef} position={[targetX, targetY, targetZ]}>
+      <mesh castShadow receiveShadow>
+        <boxGeometry args={[width, height, depth]} />
+        <meshStandardMaterial
+          color={color}
+          emissive={emissive}
+          emissiveIntensity={emissiveIntensity}
+          roughness={roughness}
+          metalness={metalness}
+        />
+      </mesh>
+
+      {badgeText && (
+        <Html position={[0, height / 2 + 0.45, 0]} center distanceFactor={14} style={{ pointerEvents: 'none' }}>
+          <span style={{
+            fontSize: '7px',
+            fontFamily: 'var(--font-mono)',
+            fontWeight: 700,
+            color: badgeColor || '#f59e0b',
+            background: '#000000',
+            padding: '1px 4px',
+            borderRadius: '2px',
+            border: `1px solid ${badgeColor || '#f59e0b'}`,
+            whiteSpace: 'nowrap'
+          }}>
+            {badgeText}
+          </span>
+        </Html>
+      )}
+
+      <Html position={[0, height / 2 + 0.3, 0]} center distanceFactor={14} style={{ pointerEvents: 'none' }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 700, color: '#ffffff' }}>
+          {val}
+        </span>
+      </Html>
+    </group>
+  );
+}
+
+/**
+ * Universal Smooth Positioned Group for Arch / Divider / Marker overlays
+ */
+function SmoothGroup({ targetPosition, children }) {
+  const groupRef = useRef();
+
+  useFrame((state, delta) => {
+    if (groupRef.current) {
+      groupRef.current.position.x = THREE.MathUtils.damp(groupRef.current.position.x, targetPosition[0], 16, delta);
+      groupRef.current.position.y = THREE.MathUtils.damp(groupRef.current.position.y, targetPosition[1], 16, delta);
+      groupRef.current.position.z = THREE.MathUtils.damp(groupRef.current.position.z, targetPosition[2], 16, delta);
+    }
+  });
+
+  return (
+    <group ref={groupRef} position={targetPosition}>
+      {children}
+    </group>
+  );
+}
 
 // ==========================================
 // 1. BUBBLE SORT — "ADJACENT COMPARISON & SETTLED SUFFIX"
@@ -31,7 +126,7 @@ export function BubbleSort3D() {
 
       {/* Comparison Arch snug over compared pair */}
       {activeIndices.length === 2 && Math.abs(activeIndices[0] - activeIndices[1]) === 1 && (
-        <group position={[archX, archY, 0]}>
+        <SmoothGroup targetPosition={[archX, archY, 0]}>
           <mesh>
             <torusGeometry args={[0.55, 0.035, 16, 32, Math.PI]} />
             <meshStandardMaterial
@@ -55,12 +150,12 @@ export function BubbleSort3D() {
               {isSwap ? 'SWAP ➔' : 'COMPARE'}
             </span>
           </Html>
-        </group>
+        </SmoothGroup>
       )}
 
       {/* Settled Suffix Marker */}
       {sortedBoundary < arr.length && (
-        <group position={[(sortedBoundary - 0.5 - (arr.length - 1) / 2) * 1.35, 1.4, 0]}>
+        <SmoothGroup targetPosition={[(sortedBoundary - 0.5 - (arr.length - 1) / 2) * 1.35, 1.4, 0]}>
           <mesh>
             <boxGeometry args={[0.04, 2.8, 1.2]} />
             <meshStandardMaterial color="#10b981" emissive="#10b981" emissiveIntensity={0.4} transparent opacity={0.5} />
@@ -80,7 +175,7 @@ export function BubbleSort3D() {
               SETTLED
             </span>
           </Html>
-        </group>
+        </SmoothGroup>
       )}
 
       {arr.map((val, idx) => {
@@ -94,15 +189,19 @@ export function BubbleSort3D() {
         let emissiveIntensity = isCompared || isPermanentlySorted ? 0.6 : 0;
 
         return (
-          <group key={`bubble-${idx}`} position={[posX, height / 2, 0]}>
-            <mesh castShadow receiveShadow>
-              <boxGeometry args={[1.0, height, 1.0]} />
-              <meshStandardMaterial color={color} emissive={emissive} emissiveIntensity={emissiveIntensity} roughness={0.2} />
-            </mesh>
-            <Html position={[0, height / 2 + 0.3, 0]} center distanceFactor={14} style={{ pointerEvents: 'none' }}>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 700, color: '#ffffff' }}>{val}</span>
-            </Html>
-          </group>
+          <AnimatedSortBar
+            key={`bubble-${idx}`}
+            targetX={posX}
+            targetY={height / 2}
+            width={1.0}
+            height={height}
+            depth={1.0}
+            color={color}
+            emissive={emissive}
+            emissiveIntensity={emissiveIntensity}
+            val={val}
+            isLifted={isCompared && isSwap}
+          />
         );
       })}
     </group>
@@ -128,7 +227,7 @@ export function SelectionSort3D() {
 
       {/* Sorted vs Unsorted Region Divider Wall */}
       {sortedPrefixEnd > 0 && (
-        <group position={[(sortedPrefixEnd - 0.5 - (arr.length - 1) / 2) * 1.35, 1.4, 0]}>
+        <SmoothGroup targetPosition={[(sortedPrefixEnd - 0.5 - (arr.length - 1) / 2) * 1.35, 1.4, 0]}>
           <mesh>
             <boxGeometry args={[0.04, 2.8, 1.2]} />
             <meshStandardMaterial color="#38bdf8" emissive="#38bdf8" emissiveIntensity={0.6} transparent opacity={0.5} />
@@ -148,7 +247,7 @@ export function SelectionSort3D() {
               SORTED | UNSORTED
             </span>
           </Html>
-        </group>
+        </SmoothGroup>
       )}
 
       {arr.map((val, idx) => {
@@ -162,24 +261,21 @@ export function SelectionSort3D() {
         let emissive = isSorted ? '#10b981' : isMin || isScanning ? color : '#000000';
 
         return (
-          <group key={`selection-${idx}`} position={[posX, height / 2, 0]}>
-            <mesh castShadow receiveShadow>
-              <boxGeometry args={[1.0, height, 1.0]} />
-              <meshStandardMaterial color={color} emissive={emissive} emissiveIntensity={0.6} roughness={0.2} />
-            </mesh>
-
-            {isMin && !isSorted && (
-              <Html position={[0, height / 2 + 0.55, 0]} center distanceFactor={14} style={{ pointerEvents: 'none' }}>
-                <span style={{ fontSize: '7px', fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#f59e0b', background: '#000', padding: '1px 3px', borderRadius: '2px', border: '1px solid #f59e0b' }}>
-                  MIN
-                </span>
-              </Html>
-            )}
-
-            <Html position={[0, height / 2 + 0.3, 0]} center distanceFactor={14} style={{ pointerEvents: 'none' }}>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 700, color: '#ffffff' }}>{val}</span>
-            </Html>
-          </group>
+          <AnimatedSortBar
+            key={`selection-${idx}`}
+            targetX={posX}
+            targetY={height / 2}
+            width={1.0}
+            height={height}
+            depth={1.0}
+            color={color}
+            emissive={emissive}
+            emissiveIntensity={0.6}
+            val={val}
+            badgeText={isMin && !isSorted ? 'MIN' : null}
+            badgeColor="#f59e0b"
+            isLifted={isMin && !isSorted}
+          />
         );
       })}
     </group>
@@ -209,30 +305,20 @@ export function InsertionSort3D() {
         let color = isLifted ? '#38bdf8' : activeIndices.includes(idx) ? '#f59e0b' : '#1e293b';
 
         return (
-          <group key={`insertion-${idx}`} position={[posX, posY, 0]}>
-            <mesh castShadow receiveShadow>
-              <boxGeometry args={[1.05, height, 0.35]} />
-              <meshStandardMaterial
-                color={color}
-                emissive={isLifted ? '#38bdf8' : activeIndices.includes(idx) ? '#f59e0b' : '#000'}
-                emissiveIntensity={isLifted ? 0.8 : activeIndices.includes(idx) ? 0.5 : 0}
-                roughness={0.2}
-                metalness={0.4}
-              />
-            </mesh>
-
-            {isLifted && (
-              <Html position={[0, height / 2 + 0.45, 0]} center distanceFactor={14} style={{ pointerEvents: 'none' }}>
-                <span style={{ fontSize: '7px', fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#38bdf8', background: '#000', padding: '1px 3px', borderRadius: '2px', border: '1px solid #38bdf8' }}>
-                  KEY
-                </span>
-              </Html>
-            )}
-
-            <Html center distanceFactor={14} style={{ pointerEvents: 'none' }}>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 700, color: '#ffffff' }}>{val}</span>
-            </Html>
-          </group>
+          <AnimatedSortBar
+            key={`insertion-${idx}`}
+            targetX={posX}
+            targetY={posY}
+            width={1.05}
+            height={height}
+            depth={0.5}
+            color={color}
+            emissive={isLifted ? '#38bdf8' : activeIndices.includes(idx) ? '#f59e0b' : '#000000'}
+            emissiveIntensity={isLifted ? 0.8 : activeIndices.includes(idx) ? 0.5 : 0}
+            val={val}
+            badgeText={isLifted ? 'KEY' : null}
+            badgeColor="#38bdf8"
+          />
         );
       })}
     </group>
@@ -258,7 +344,7 @@ export function QuickSort3D() {
 
       {/* Subarray Boundary Brackets */}
       {low !== undefined && high !== undefined && (
-        <group position={[((low + high) / 2 - (arr.length - 1) / 2) * 1.35, 3.4, 0]}>
+        <SmoothGroup targetPosition={[((low + high) / 2 - (arr.length - 1) / 2) * 1.35, 3.4, 0]}>
           <mesh>
             <boxGeometry args={[(high - low + 1) * 1.35, 0.06, 0.2]} />
             <meshStandardMaterial color="#a855f7" emissive="#a855f7" emissiveIntensity={0.6} />
@@ -268,7 +354,7 @@ export function QuickSort3D() {
               PARTITION [{low}..{high}]
             </span>
           </Html>
-        </group>
+        </SmoothGroup>
       )}
 
       {arr.map((val, idx) => {
@@ -281,24 +367,20 @@ export function QuickSort3D() {
         let color = isPivot ? '#a855f7' : isCompared ? '#38bdf8' : '#1e293b';
 
         return (
-          <group key={`quick-${idx}`} position={[posX, posY, 0]}>
-            <mesh castShadow receiveShadow>
-              <boxGeometry args={[1.0, height, 1.0]} />
-              <meshStandardMaterial color={color} emissive={isPivot ? '#a855f7' : isCompared ? '#38bdf8' : '#000'} emissiveIntensity={isPivot || isCompared ? 0.6 : 0} roughness={0.2} />
-            </mesh>
-
-            {isPivot && (
-              <Html position={[0, height / 2 + 0.45, 0]} center distanceFactor={14} style={{ pointerEvents: 'none' }}>
-                <span style={{ fontSize: '8px', fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#a855f7', background: '#000', padding: '1px 4px', borderRadius: '2px', border: '1px solid #a855f7' }}>
-                  PIVOT
-                </span>
-              </Html>
-            )}
-
-            <Html position={[0, height / 2 + 0.3, 0]} center distanceFactor={14} style={{ pointerEvents: 'none' }}>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 700, color: '#ffffff' }}>{val}</span>
-            </Html>
-          </group>
+          <AnimatedSortBar
+            key={`quick-${idx}`}
+            targetX={posX}
+            targetY={posY}
+            width={1.0}
+            height={height}
+            depth={1.0}
+            color={color}
+            emissive={isPivot ? '#a855f7' : isCompared ? '#38bdf8' : '#000000'}
+            emissiveIntensity={isPivot || isCompared ? 0.6 : 0}
+            val={val}
+            badgeText={isPivot ? 'PIVOT' : null}
+            badgeColor="#a855f7"
+          />
         );
       })}
     </group>
@@ -329,15 +411,19 @@ export function MergeSort3D() {
           let color = isTarget ? (isMerging ? '#10b981' : '#38bdf8') : '#1e293b';
 
           return (
-            <group key={`merge-${idx}`} position={[posX, height / 2, posZ]}>
-              <mesh castShadow receiveShadow>
-                <boxGeometry args={[1.0, height, 1.0]} />
-                <meshStandardMaterial color={color} emissive={isTarget ? color : '#000'} emissiveIntensity={isTarget ? 0.6 : 0} roughness={0.2} />
-              </mesh>
-              <Html position={[0, height / 2 + 0.3, 0]} center distanceFactor={14} style={{ pointerEvents: 'none' }}>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 700, color: '#ffffff' }}>{val}</span>
-              </Html>
-            </group>
+            <AnimatedSortBar
+              key={`merge-${idx}`}
+              targetX={posX}
+              targetY={height / 2}
+              targetZ={posZ}
+              width={1.0}
+              height={height}
+              depth={1.0}
+              color={color}
+              emissive={isTarget ? color : '#000000'}
+              emissiveIntensity={isTarget ? 0.6 : 0}
+              val={val}
+            />
           );
         })}
       </group>
@@ -348,6 +434,36 @@ export function MergeSort3D() {
 // ==========================================
 // 6. HEAP SORT — "DUAL HEAP TREE & RUNWAY"
 // ==========================================
+function AnimatedHeapNode({ targetX, targetY, val, isRoot, isTarget }) {
+  const groupRef = useRef();
+
+  useFrame((state, delta) => {
+    if (groupRef.current) {
+      groupRef.current.position.x = THREE.MathUtils.damp(groupRef.current.position.x, targetX, 16, delta);
+      groupRef.current.position.y = THREE.MathUtils.damp(groupRef.current.position.y, targetY, 16, delta);
+    }
+  });
+
+  return (
+    <group ref={groupRef} position={[targetX, targetY, 0]}>
+      <mesh castShadow>
+        <sphereGeometry args={[0.38, 24, 24]} />
+        <meshStandardMaterial
+          color={isRoot ? '#a855f7' : isTarget ? '#38bdf8' : '#1e293b'}
+          emissive={isRoot ? '#a855f7' : isTarget ? '#38bdf8' : '#000000'}
+          emissiveIntensity={0.6}
+          roughness={0.2}
+        />
+      </mesh>
+      <Html center distanceFactor={14} style={{ pointerEvents: 'none' }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', fontWeight: 700, color: '#ffffff' }}>
+          {val}
+        </span>
+      </Html>
+    </group>
+  );
+}
+
 export function HeapSort3D() {
   const data = useVisualizerStore((s) => s.data);
   const currentStep = useVisualizerStore((s) => s.currentStep);
@@ -369,20 +485,14 @@ export function HeapSort3D() {
           const isTarget = activeIndices.includes(idx);
 
           return (
-            <group key={`heap-node-${idx}`} position={[posX, posY, 0]}>
-              <mesh castShadow>
-                <sphereGeometry args={[0.38, 24, 24]} />
-                <meshStandardMaterial
-                  color={idx === 0 ? '#a855f7' : isTarget ? '#38bdf8' : '#1e293b'}
-                  emissive={idx === 0 ? '#a855f7' : isTarget ? '#38bdf8' : '#000'}
-                  emissiveIntensity={0.6}
-                  roughness={0.2}
-                />
-              </mesh>
-              <Html center distanceFactor={14} style={{ pointerEvents: 'none' }}>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', fontWeight: 700, color: '#ffffff' }}>{val}</span>
-              </Html>
-            </group>
+            <AnimatedHeapNode
+              key={`heap-node-${idx}`}
+              targetX={posX}
+              targetY={posY}
+              val={val}
+              isRoot={idx === 0}
+              isTarget={isTarget}
+            />
           );
         })}
       </group>
@@ -394,15 +504,18 @@ export function HeapSort3D() {
           const posX = (idx - (arr.length - 1) / 2) * 1.35;
 
           return (
-            <group key={`heap-arr-${idx}`} position={[posX, 0.4, 0]}>
-              <mesh castShadow receiveShadow>
-                <boxGeometry args={[1.0, 0.8, 1.0]} />
-                <meshStandardMaterial color={isTarget ? '#38bdf8' : '#1e293b'} emissive={isTarget ? '#38bdf8' : '#000'} emissiveIntensity={0.5} />
-              </mesh>
-              <Html center distanceFactor={14} style={{ pointerEvents: 'none' }}>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', fontWeight: 700, color: '#ffffff' }}>{val}</span>
-              </Html>
-            </group>
+            <AnimatedSortBar
+              key={`heap-arr-${idx}`}
+              targetX={posX}
+              targetY={0.4}
+              width={1.0}
+              height={0.8}
+              depth={1.0}
+              color={isTarget ? '#38bdf8' : '#1e293b'}
+              emissive={isTarget ? '#38bdf8' : '#000000'}
+              emissiveIntensity={0.5}
+              val={val}
+            />
           );
         })}
       </group>
@@ -427,7 +540,7 @@ export function ShellSort3D() {
 
       {/* Gap Arch Over Connected Pair */}
       {activeIndices.length === 2 && (
-        <group position={[((activeIndices[0] + activeIndices[1]) / 2 - (arr.length - 1) / 2) * 1.35, 3.0, 0]}>
+        <SmoothGroup targetPosition={[((activeIndices[0] + activeIndices[1]) / 2 - (arr.length - 1) / 2) * 1.35, 3.0, 0]}>
           <mesh>
             <torusGeometry args={[(Math.abs(activeIndices[0] - activeIndices[1]) * 1.35) / 2, 0.035, 16, 32, Math.PI]} />
             <meshStandardMaterial color="#38bdf8" emissive="#38bdf8" emissiveIntensity={0.8} />
@@ -437,7 +550,7 @@ export function ShellSort3D() {
               GAP = {gap}
             </span>
           </Html>
-        </group>
+        </SmoothGroup>
       )}
 
       {arr.map((val, idx) => {
@@ -446,15 +559,18 @@ export function ShellSort3D() {
         const posX = (idx - (arr.length - 1) / 2) * 1.35;
 
         return (
-          <group key={`shell-${idx}`} position={[posX, height / 2, 0]}>
-            <mesh castShadow receiveShadow>
-              <boxGeometry args={[1.0, height, 1.0]} />
-              <meshStandardMaterial color={isTarget ? '#38bdf8' : '#1e293b'} emissive={isTarget ? '#38bdf8' : '#000'} emissiveIntensity={isTarget ? 0.6 : 0} />
-            </mesh>
-            <Html position={[0, height / 2 + 0.3, 0]} center distanceFactor={14} style={{ pointerEvents: 'none' }}>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 700, color: '#ffffff' }}>{val}</span>
-            </Html>
-          </group>
+          <AnimatedSortBar
+            key={`shell-${idx}`}
+            targetX={posX}
+            targetY={height / 2}
+            width={1.0}
+            height={height}
+            depth={1.0}
+            color={isTarget ? '#38bdf8' : '#1e293b'}
+            emissive={isTarget ? '#38bdf8' : '#000000'}
+            emissiveIntensity={isTarget ? 0.6 : 0}
+            val={val}
+          />
         );
       })}
     </group>
@@ -483,15 +599,18 @@ export function CocktailSort3D() {
         let color = isTarget ? (direction === 'forward' ? '#38bdf8' : '#f59e0b') : '#1e293b';
 
         return (
-          <group key={`cocktail-${idx}`} position={[posX, height / 2, 0]}>
-            <mesh castShadow receiveShadow>
-              <boxGeometry args={[1.0, height, 1.0]} />
-              <meshStandardMaterial color={color} emissive={isTarget ? color : '#000'} emissiveIntensity={isTarget ? 0.6 : 0} />
-            </mesh>
-            <Html position={[0, height / 2 + 0.3, 0]} center distanceFactor={14} style={{ pointerEvents: 'none' }}>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 700, color: '#ffffff' }}>{val}</span>
-            </Html>
-          </group>
+          <AnimatedSortBar
+            key={`cocktail-${idx}`}
+            targetX={posX}
+            targetY={height / 2}
+            width={1.0}
+            height={height}
+            depth={1.0}
+            color={color}
+            emissive={isTarget ? color : '#000000'}
+            emissiveIntensity={isTarget ? 0.6 : 0}
+            val={val}
+          />
         );
       })}
     </group>
@@ -515,7 +634,7 @@ export function CombSort3D() {
 
       {/* Comb Horizontal Bar & Teeth */}
       {activeIndices.length === 2 && (
-        <group position={[((activeIndices[0] + activeIndices[1]) / 2 - (arr.length - 1) / 2) * 1.35, 3.2, 0]}>
+        <SmoothGroup targetPosition={[((activeIndices[0] + activeIndices[1]) / 2 - (arr.length - 1) / 2) * 1.35, 3.2, 0]}>
           <mesh>
             <boxGeometry args={[Math.abs(activeIndices[1] - activeIndices[0]) * 1.35, 0.08, 0.3]} />
             <meshStandardMaterial color="#38bdf8" emissive="#38bdf8" emissiveIntensity={0.8} />
@@ -525,7 +644,7 @@ export function CombSort3D() {
               COMB GAP = {gap}
             </span>
           </Html>
-        </group>
+        </SmoothGroup>
       )}
 
       {arr.map((val, idx) => {
@@ -534,15 +653,18 @@ export function CombSort3D() {
         const posX = (idx - (arr.length - 1) / 2) * 1.35;
 
         return (
-          <group key={`comb-${idx}`} position={[posX, height / 2, 0]}>
-            <mesh castShadow receiveShadow>
-              <boxGeometry args={[1.0, height, 1.0]} />
-              <meshStandardMaterial color={isTarget ? '#38bdf8' : '#1e293b'} emissive={isTarget ? '#38bdf8' : '#000'} emissiveIntensity={isTarget ? 0.6 : 0} />
-            </mesh>
-            <Html position={[0, height / 2 + 0.3, 0]} center distanceFactor={14} style={{ pointerEvents: 'none' }}>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 700, color: '#ffffff' }}>{val}</span>
-            </Html>
-          </group>
+          <AnimatedSortBar
+            key={`comb-${idx}`}
+            targetX={posX}
+            targetY={height / 2}
+            width={1.0}
+            height={height}
+            depth={1.0}
+            color={isTarget ? '#38bdf8' : '#1e293b'}
+            emissive={isTarget ? '#38bdf8' : '#000000'}
+            emissiveIntensity={isTarget ? 0.6 : 0}
+            val={val}
+          />
         );
       })}
     </group>
@@ -565,7 +687,7 @@ export function GnomeSort3D() {
       <gridHelper args={[24, 24, '#1f2937', '#111827']} position={[0, -0.05, 0]} />
 
       {/* 3D Gnome Cursor Beacon */}
-      <group position={[(pos - (arr.length - 1) / 2) * 1.35, 3.2, 0]}>
+      <SmoothGroup targetPosition={[(pos - (arr.length - 1) / 2) * 1.35, 3.2, 0]}>
         <mesh>
           <coneGeometry args={[0.25, 0.55, 16]} />
           <meshStandardMaterial color="#10b981" emissive="#10b981" emissiveIntensity={0.8} />
@@ -575,7 +697,7 @@ export function GnomeSort3D() {
             GNOME
           </span>
         </Html>
-      </group>
+      </SmoothGroup>
 
       {arr.map((val, idx) => {
         const isTarget = activeIndices.includes(idx);
@@ -584,15 +706,18 @@ export function GnomeSort3D() {
         const posX = (idx - (arr.length - 1) / 2) * 1.35;
 
         return (
-          <group key={`gnome-${idx}`} position={[posX, height / 2, 0]}>
-            <mesh castShadow receiveShadow>
-              <boxGeometry args={[1.0, height, 1.0]} />
-              <meshStandardMaterial color={isAtGnome ? '#10b981' : isTarget ? '#f59e0b' : '#1e293b'} emissive={isAtGnome ? '#10b981' : isTarget ? '#f59e0b' : '#000'} emissiveIntensity={isAtGnome || isTarget ? 0.6 : 0} />
-            </mesh>
-            <Html position={[0, height / 2 + 0.3, 0]} center distanceFactor={14} style={{ pointerEvents: 'none' }}>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 700, color: '#ffffff' }}>{val}</span>
-            </Html>
-          </group>
+          <AnimatedSortBar
+            key={`gnome-${idx}`}
+            targetX={posX}
+            targetY={height / 2}
+            width={1.0}
+            height={height}
+            depth={1.0}
+            color={isAtGnome ? '#10b981' : isTarget ? '#f59e0b' : '#1e293b'}
+            emissive={isAtGnome ? '#10b981' : isTarget ? '#f59e0b' : '#000000'}
+            emissiveIntensity={isAtGnome || isTarget ? 0.6 : 0}
+            val={val}
+          />
         );
       })}
     </group>

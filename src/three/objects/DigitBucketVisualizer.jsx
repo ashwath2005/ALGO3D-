@@ -1,6 +1,48 @@
-import React from 'react';
+import React, { useRef } from 'react';
+import { useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
+import * as THREE from 'three';
 import { useVisualizerStore } from '../../store/useVisualizerStore.js';
+
+function SmoothRadixBlock({ targetX, val, currentDigit, isTarget }) {
+  const groupRef = useRef();
+
+  useFrame((state, delta) => {
+    if (groupRef.current) {
+      groupRef.current.position.x = THREE.MathUtils.damp(groupRef.current.position.x, targetX, 16, delta);
+    }
+  });
+
+  return (
+    <group ref={groupRef} position={[targetX, 0.6, 0]}>
+      <mesh castShadow receiveShadow>
+        <boxGeometry args={[1.05, 1.05, 1.05]} />
+        <meshStandardMaterial
+          color={isTarget ? '#38bdf8' : '#1e293b'}
+          emissive={isTarget ? '#38bdf8' : '#000000'}
+          emissiveIntensity={isTarget ? 0.6 : 0}
+          roughness={0.2}
+        />
+      </mesh>
+
+      <Html center distanceFactor={14} style={{ pointerEvents: 'none' }}>
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          fontFamily: 'var(--font-mono)'
+        }}>
+          <span style={{ fontSize: '12px', fontWeight: 700, color: '#ffffff' }}>
+            {val}
+          </span>
+          <span style={{ fontSize: '8px', color: 'var(--accent-amber)', fontWeight: 600 }}>
+            digit: {currentDigit}
+          </span>
+        </div>
+      </Html>
+    </group>
+  );
+}
 
 export function DigitBucketVisualizer() {
   const data = useVisualizerStore((s) => s.data);
@@ -73,33 +115,13 @@ export function DigitBucketVisualizer() {
           const posX = (idx - (arr.length - 1) / 2) * 1.35;
 
           return (
-            <group key={`radix-elem-${idx}`} position={[posX, 0.6, 0]}>
-              <mesh castShadow receiveShadow>
-                <boxGeometry args={[1.05, 1.05, 1.05]} />
-                <meshStandardMaterial
-                  color={isTarget ? '#38bdf8' : '#1e293b'}
-                  emissive={isTarget ? '#38bdf8' : '#000000'}
-                  emissiveIntensity={isTarget ? 0.6 : 0}
-                  roughness={0.2}
-                />
-              </mesh>
-
-              <Html center distanceFactor={14} style={{ pointerEvents: 'none' }}>
-                <div style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  fontFamily: 'var(--font-mono)'
-                }}>
-                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#ffffff' }}>
-                    {val}
-                  </span>
-                  <span style={{ fontSize: '8px', color: 'var(--accent-amber)', fontWeight: 600 }}>
-                    digit: {currentDigit}
-                  </span>
-                </div>
-              </Html>
-            </group>
+            <SmoothRadixBlock
+              key={`radix-elem-${idx}`}
+              targetX={posX}
+              val={val}
+              currentDigit={currentDigit}
+              isTarget={isTarget}
+            />
           );
         })}
       </group>

@@ -1,6 +1,29 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef } from 'react';
+import { useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
+import * as THREE from 'three';
 import { useVisualizerStore } from '../../store/useVisualizerStore.js';
+
+function SmoothProbingQueen({ targetX, targetZ, isConflict }) {
+  const groupRef = useRef();
+
+  useFrame((state, delta) => {
+    if (groupRef.current) {
+      groupRef.current.position.x = THREE.MathUtils.damp(groupRef.current.position.x, targetX, 16, delta);
+      groupRef.current.position.z = THREE.MathUtils.damp(groupRef.current.position.z, targetZ, 16, delta);
+    }
+  });
+
+  return (
+    <group ref={groupRef} position={[targetX, 0.3, targetZ]}>
+      <StauntonChessQueen
+        isTesting={!isConflict}
+        isConflict={isConflict}
+        isSelected={false}
+      />
+    </group>
+  );
+}
 
 // Realistic Classic Staunton 3D Chess Queen
 function StauntonChessQueen({ isLocked, isConflict, isTesting, isSelected, onClick }) {
@@ -245,7 +268,6 @@ export function NQueensArena3D() {
           );
         })
       )}
-
       {/* Placed Staunton Queens */}
       {placedQueens.map((q) => {
         const posX = q.col * tileSize - offset;
@@ -274,19 +296,11 @@ export function NQueensArena3D() {
 
       {/* Candidate / Probing Queen */}
       {activeRow !== undefined && activeCol !== undefined && !placedQueens.some((q) => q.row === activeRow && q.col === activeCol) && (
-        <group
-          position={[
-            activeCol * tileSize - offset,
-            0.3,
-            activeRow * tileSize - offset
-          ]}
-        >
-          <StauntonChessQueen
-            isTesting={!isConflict}
-            isConflict={isConflict}
-            isSelected={false}
-          />
-        </group>
+        <SmoothProbingQueen
+          targetX={activeCol * tileSize - offset}
+          targetZ={activeRow * tileSize - offset}
+          isConflict={isConflict}
+        />
       )}
     </group>
   );
