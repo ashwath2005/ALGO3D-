@@ -1,5 +1,5 @@
 import React from 'react';
-import { Layers, Terminal, Sparkles, Cpu, ShieldCheck } from 'lucide-react';
+import { Layers, Terminal, Sparkles, Cpu, ShieldCheck, Users, Github, ExternalLink } from 'lucide-react';
 
 export function AboutPage() {
   return (
@@ -10,15 +10,69 @@ export function AboutPage() {
       background: 'var(--bg-primary)',
       overflowY: 'auto'
     }}>
-      <div style={{ maxWidth: '780px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '32px' }}>
+      <div style={{ maxWidth: '820px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '32px' }}>
         <div>
-          <span className="badge cyan" style={{ marginBottom: '8px' }}>ARCHITECTURE & PHILOSOPHY</span>
+          <span className="badge cyan" style={{ marginBottom: '8px' }}>ARCHITECTURE & COLLABORATION</span>
           <h1 style={{ fontSize: '32px', fontWeight: 700, color: '#ffffff', marginTop: '6px' }}>
             About ALGO3D
           </h1>
           <p style={{ fontSize: '15px', color: 'var(--text-secondary)', marginTop: '8px', lineHeight: '1.6' }}>
-            ALGO3D is an interactive 3D laboratory built for developers, computer science students, and researchers to explore data structures and algorithms through decoupled step-by-step 3D visual execution.
+            ALGO3D is an interactive 3D laboratory built for developers, computer science students, and researchers to explore data structures and algorithms through decoupled step-by-step 3D visual execution and deterministic empirical benchmarking.
           </p>
+        </div>
+
+        {/* Project Authors & Team */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: 600, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Users size={18} style={{ color: 'var(--accent-cyan)' }} />
+            <span>Project Authors & Collaborators</span>
+          </h2>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px' }}>
+            {/* Ashwath S */}
+            <div className="glass-panel" style={{ padding: '20px', borderRadius: 'var(--radius-md)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '16px', fontWeight: 700, color: '#ffffff' }}>Ashwath S</span>
+                <a
+                  href="https://github.com/ashwath2005"
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ color: 'var(--accent-cyan)', display: 'flex', alignItems: 'center', gap: '4px', textDecoration: 'none', fontSize: '12px', fontFamily: 'var(--font-mono)' }}
+                >
+                  <Github size={14} />
+                  <span>@ashwath2005</span>
+                </a>
+              </div>
+              <span style={{ fontSize: '12px', color: 'var(--accent-emerald)', fontFamily: 'var(--font-mono)' }}>
+                3D Graphics & Engine Architecture
+              </span>
+              <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+                Engineered the WebGL Three.js scenes, unified execution engine, semantic camera choreography, and sound synthesizer.
+              </p>
+            </div>
+
+            {/* Cathrin */}
+            <div className="glass-panel" style={{ padding: '20px', borderRadius: 'var(--radius-md)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '16px', fontWeight: 700, color: '#ffffff' }}>Cathrin</span>
+                <a
+                  href="https://github.com/Cathrin-11"
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ color: 'var(--accent-cyan)', display: 'flex', alignItems: 'center', gap: '4px', textDecoration: 'none', fontSize: '12px', fontFamily: 'var(--font-mono)' }}
+                >
+                  <Github size={14} />
+                  <span>@Cathrin-11</span>
+                </a>
+              </div>
+              <span style={{ fontSize: '12px', color: 'var(--accent-purple)', fontFamily: 'var(--font-mono)' }}>
+                Algorithms & Benchmarking Systems
+              </span>
+              <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+                Co-developed algorithm models, deterministic dataset configurations, challenge laboratory, and educational intelligence systems.
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Technical Architecture */}
@@ -62,7 +116,7 @@ export function AboutPage() {
           </h2>
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
             gap: '12px',
             fontFamily: 'var(--font-mono)',
             fontSize: '12px'

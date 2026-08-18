@@ -4,11 +4,22 @@
 
 ---
 
+## 👥 Authors & Project Team
+
+This is a **collaborative project** engineered and maintained by:
+
+| Contributor | GitHub Profile | Role |
+| :--- | :--- | :--- |
+| **Ashwath S** | [@ashwath2005](https://github.com/ashwath2005) | 3D Graphics Architecture, Engine Pipeline, WebGL Scenes |
+| **Cathrin** | [@Cathrin-11](https://github.com/Cathrin-11) | Algorithm Implementations, Benchmarking & Challenge Systems |
+
+---
+
 ## ✨ Features
 
 - **42 Bespoke 3D Algorithm Visualizations**: Built with Three.js, React Three Fiber, and Drei.
 - **Single Unified Execution Engine**: Checkpoint recovery, time travel, synchronized code execution, and invariant monitoring.
-- **Experiment & Comparison Lab**: Deterministic PRNG (`Mulberry32`) seeded multi-algorithm races, empirical complexity sweeping ($N=10..500$), and statistical distribution metrics.
+- **Experiment & Comparison Lab 2.0**: Deterministic PRNG (`Mulberry32`) seeded multi-algorithm races, empirical complexity sweeping ($N=10..500$), and statistical distribution metrics.
 - **Algorithm Atlas & Knowledge Graph**: 5 curated guided learning paths, CS metadata, paradigm filtering, and local notes synchronization.
 - **Interactive Challenge Studio**: Test intuition across prediction, complexity, code debugging, and scenario selection.
 - **Custom Algorithm SDK**: Write custom JavaScript algorithms with automated test runners and watch them execute live in the 3D scene.
@@ -48,4 +59,4 @@ npm run build
 ---
 
 ## 📜 License
-MIT License. Created by [Ashwath S](https://github.com/ashwath2005).
+MIT License. Created collaboratively by [Ashwath S](https://github.com/ashwath2005) and [Cathrin](https://github.com/Cathrin-11).
